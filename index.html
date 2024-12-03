@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Collaborative Rich-Text Editor</title>
+  <title>Simple Pad</title>
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
   <style>
     body {
@@ -30,7 +30,7 @@
   </style>
 </head>
 <body>
-  <h1 id="page-title">Collaborative Rich-Text Editor</h1>
+  <h1 id="page-title">Simple Pad</h1>
   <div id="editor-container"></div>
 
   <!-- Firebase compatibility scripts -->
@@ -65,7 +65,7 @@
     const documentId = getDocumentIdFromURL();
 
     // Update the page title dynamically
-    document.getElementById('page-title').textContent = `Collaborative Rich-Text Editor - Pad: ${documentId}`;
+    document.getElementById('page-title').textContent = `Simple Pad:# ${documentId}`;
 
     // Initialize Quill.js
     const quill = new Quill('#editor-container', {
