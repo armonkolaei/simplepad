@@ -44,6 +44,23 @@
       cursor: pointer;
     }
 
+    #purge-doc-btn {
+      border: 1px solid #8f1111;
+      background: #fff;
+      color: #8f1111;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    #purge-doc-btn:hover {
+      background: #8f1111;
+      color: #fff;
+    }
+
     #new-doc-btn:hover {
       background: #333;
       color: #fff;
@@ -54,6 +71,119 @@
       width: min(1200px, calc(100vw - 2rem));
       margin: 20px auto;
       border: 1px solid #ddd;
+    }
+
+    .welcome-screen {
+      width: min(900px, calc(100vw - 2rem));
+      margin: 20px auto 30px;
+      padding: 22px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+      color: #222;
+      line-height: 1.5;
+    }
+
+    .welcome-screen h2 {
+      margin-top: 0;
+    }
+
+    .uploads-section {
+      width: min(1200px, calc(100vw - 2rem));
+      margin: 0 auto 24px;
+      padding: 16px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    .uploads-controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    #upload-file-btn {
+      border: 1px solid #333;
+      background: #333;
+      color: #fff;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #delete-all-files-btn {
+      border: 1px solid #a61a1a;
+      background: #fff;
+      color: #a61a1a;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #delete-all-files-btn:hover {
+      background: #a61a1a;
+      color: #fff;
+    }
+
+    #upload-status {
+      color: #444;
+      font-size: 13px;
+    }
+
+    .uploads-table-wrap {
+      overflow-x: auto;
+    }
+
+    #uploads-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 520px;
+      background: #fff;
+    }
+
+    #uploads-table th,
+    #uploads-table td {
+      border: 1px solid #e2e2e2;
+      padding: 8px 10px;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    #uploads-table th {
+      background: #f3f3f3;
+    }
+
+    .download-link {
+      color: #0a58ca;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .download-link:hover {
+      text-decoration: underline;
+    }
+
+    .delete-file-btn {
+      border: 1px solid #b42323;
+      background: #fff;
+      color: #b42323;
+      border-radius: 6px;
+      padding: 5px 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .delete-file-btn:hover {
+      background: #b42323;
+      color: #fff;
     }
 
     @media (max-width: 768px) {
@@ -72,6 +202,18 @@
         width: calc(100vw - 1rem);
         margin: 12px auto;
       }
+
+      .uploads-section {
+        width: calc(100vw - 1rem);
+        padding: 12px;
+        margin-bottom: 16px;
+      }
+
+      .welcome-screen {
+        width: calc(100vw - 1rem);
+        padding: 14px;
+        margin-top: 12px;
+      }
     }
   </style>
 </head>
@@ -79,8 +221,44 @@
   <h1 id="page-title">Simple Pad</h1>
   <div class="top-actions">
     <button id="new-doc-btn" type="button">Create New Doc</button>
+    <button id="purge-doc-btn" type="button">Purge This Doc</button>
   </div>
+  <section id="welcome-screen" class="welcome-screen" aria-label="Welcome">
+    <h2>Welcome to Simple Pad</h2>
+    <p>Simple Pad is a lightweight shared editor where you can write notes, add images, and attach files for each document.</p>
+    <ul>
+      <li>Create and edit rich text in real time.</li>
+      <li>Upload files and download them from the Attachments table.</li>
+      <li>Share a document using its unique URL.</li>
+    </ul>
+    <p>Click <strong>Create New Doc</strong> above to start a fresh document with its own UUID link.</p>
+  </section>
   <div id="editor-container"></div>
+  <section id="uploads-section" class="uploads-section" aria-label="File uploads">
+    <h2>Attachments</h2>
+    <div class="uploads-controls">
+      <input id="file-input" type="file" multiple>
+      <button id="upload-file-btn" type="button">Upload Files</button>
+      <button id="delete-all-files-btn" type="button">Delete All Files</button>
+      <span id="upload-status"></span>
+    </div>
+    <div class="uploads-table-wrap">
+      <table id="uploads-table">
+        <thead>
+          <tr>
+            <th>File Name</th>
+            <th>Size</th>
+            <th>Uploaded</th>
+            <th>Download</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody id="uploaded-files-body">
+          <tr><td colspan="5">No files uploaded yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
 
   <!-- Firebase compatibility scripts -->
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
@@ -117,10 +295,20 @@
     // Get the unique document ID from the URL
     const getDocumentIdFromURL = () => {
       const urlParams = new URLSearchParams(window.location.search);
-      return urlParams.get('doc') || 'default-doc'; // Fallback to 'default-doc' if no `doc` parameter
+      return urlParams.get('doc');
     };
 
     const documentId = getDocumentIdFromURL();
+    const hasDocument = Boolean(documentId);
+    const uploadStatusEl = document.getElementById('upload-status');
+    const fileInputEl = document.getElementById('file-input');
+    const uploadsBodyEl = document.getElementById('uploaded-files-body');
+    const deleteAllFilesBtnEl = document.getElementById('delete-all-files-btn');
+    const pageTitleEl = document.getElementById('page-title');
+    const editorContainerEl = document.getElementById('editor-container');
+    const uploadsSectionEl = document.getElementById('uploads-section');
+    const welcomeScreenEl = document.getElementById('welcome-screen');
+    const purgeDocBtnEl = document.getElementById('purge-doc-btn');
 
     document.getElementById('new-doc-btn').addEventListener('click', () => {
       const newDocumentId = createDocumentId();
@@ -129,47 +317,223 @@
       window.location.href = nextURL.toString();
     });
 
-    // Update the page title dynamically
-    document.getElementById('page-title').textContent = `Simple Pad:# ${documentId}`;
+    if (!hasDocument) {
+      pageTitleEl.textContent = 'Simple Pad';
+      editorContainerEl.style.display = 'none';
+      uploadsSectionEl.style.display = 'none';
+      welcomeScreenEl.style.display = 'block';
+      purgeDocBtnEl.style.display = 'none';
+    } else {
+      // Update the page title dynamically
+      pageTitleEl.textContent = `Simple Pad:# ${documentId}`;
+      welcomeScreenEl.style.display = 'none';
 
-    // Initialize Quill.js
-    const quill = new Quill('#editor-container', {
-      theme: 'snow',
-      modules: {
-        toolbar: [
-          ['bold', 'italic', 'underline'], // Text styles
-          [{ 'header': [1, 2, 3, false] }], // Headers
-          [{ 'list': 'ordered' }, { 'list': 'bullet' }], // Lists
-          ['link', 'image'], // Links and images
-          ['clean'] // Clear formatting
-        ]
-      }
-    });
-
-    // Reference the specific document in Firebase
-    const docRef = database.ref(`documents/${documentId}`);
-
-    // Check if the document exists
-    docRef.once('value').then((snapshot) => {
-      if (!snapshot.exists()) {
-        // Create a new document if it doesn't exist
-        docRef.set({ content: '' });
-      }
-
-      // Sync changes from Firebase to Quill.js
-      docRef.on('value', (snapshot) => {
-        const data = snapshot.val();
-        if (data && data.content !== quill.root.innerHTML) {
-          quill.root.innerHTML = data.content;
+      // Initialize Quill.js
+      const quill = new Quill('#editor-container', {
+        theme: 'snow',
+        modules: {
+          toolbar: [
+            ['bold', 'italic', 'underline'], // Text styles
+            [{ 'header': [1, 2, 3, false] }], // Headers
+            [{ 'list': 'ordered' }, { 'list': 'bullet' }], // Lists
+            ['link', 'image'], // Links and images
+            ['clean'] // Clear formatting
+          ]
         }
       });
 
-      // Sync changes from Quill.js to Firebase
-      quill.on('text-change', () => {
-        const content = quill.root.innerHTML;
-        docRef.set({ content });
+      // Reference the specific document in Firebase
+      const docRef = database.ref(`documents/${documentId}`);
+      const filesRef = docRef.child('files');
+
+      purgeDocBtnEl.addEventListener('click', async () => {
+        const ok = window.confirm('Purge this entire document and all files? This cannot be undone.');
+        if (!ok) {
+          return;
+        }
+
+        try {
+          await docRef.remove();
+          const nextURL = new URL(window.location.href);
+          nextURL.searchParams.delete('doc');
+          window.location.href = nextURL.toString();
+        } catch (error) {
+          uploadStatusEl.textContent = 'Failed to purge document.';
+          console.error(error);
+        }
       });
+
+    const formatBytes = (bytes) => {
+      if (!Number.isFinite(bytes) || bytes < 1) {
+        return '0 B';
+      }
+
+      const units = ['B', 'KB', 'MB', 'GB'];
+      const exp = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+      const value = bytes / (1024 ** exp);
+      return `${value.toFixed(value >= 10 || exp === 0 ? 0 : 1)} ${units[exp]}`;
+    };
+
+    const formatDate = (timestamp) => {
+      if (!timestamp) {
+        return 'Unknown';
+      }
+
+      return new Date(timestamp).toLocaleString();
+    };
+
+    const renderFilesTable = (filesObject) => {
+      uploadsBodyEl.innerHTML = '';
+
+      const files = Object.entries(filesObject || {})
+        .map(([id, value]) => ({ id, ...value }))
+        .sort((a, b) => (b.uploadedAt || 0) - (a.uploadedAt || 0));
+
+      if (!files.length) {
+        uploadsBodyEl.innerHTML = '<tr><td colspan="5">No files uploaded yet.</td></tr>';
+        return;
+      }
+
+      files.forEach((file) => {
+        const row = document.createElement('tr');
+
+        const nameCell = document.createElement('td');
+        nameCell.textContent = file.name || 'Unnamed file';
+
+        const sizeCell = document.createElement('td');
+        sizeCell.textContent = formatBytes(file.size || 0);
+
+        const dateCell = document.createElement('td');
+        dateCell.textContent = formatDate(file.uploadedAt);
+
+        const downloadCell = document.createElement('td');
+        if (file.dataURL) {
+          const link = document.createElement('a');
+          link.className = 'download-link';
+          link.href = '#';
+          link.textContent = 'Download';
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const downloader = document.createElement('a');
+            downloader.href = file.dataURL;
+            downloader.download = file.name || 'download';
+            downloader.click();
+          });
+          downloadCell.appendChild(link);
+        } else {
+          downloadCell.textContent = 'Unavailable';
+        }
+
+        const deleteCell = document.createElement('td');
+        const deleteButton = document.createElement('button');
+        deleteButton.type = 'button';
+        deleteButton.className = 'delete-file-btn';
+        deleteButton.textContent = 'Delete';
+        deleteButton.addEventListener('click', async () => {
+          const ok = window.confirm(`Delete file "${file.name || 'Unnamed file'}"?`);
+          if (!ok) {
+            return;
+          }
+
+          try {
+            await filesRef.child(file.id).remove();
+            uploadStatusEl.textContent = 'File deleted.';
+          } catch (error) {
+            uploadStatusEl.textContent = 'Failed to delete file.';
+            console.error(error);
+          }
+        });
+        deleteCell.appendChild(deleteButton);
+
+        row.appendChild(nameCell);
+        row.appendChild(sizeCell);
+        row.appendChild(dateCell);
+        row.appendChild(downloadCell);
+        row.appendChild(deleteCell);
+        uploadsBodyEl.appendChild(row);
+      });
+    };
+
+    const toDataURL = (file) => new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+      reader.readAsDataURL(file);
     });
+
+      const uploadSingleFile = async (file) => {
+        const fileId = database.ref().push().key;
+        const dataURL = await toDataURL(file);
+
+        await filesRef.child(fileId).set({
+          name: file.name,
+          size: file.size,
+          type: file.type || 'application/octet-stream',
+          uploadedAt: firebase.database.ServerValue.TIMESTAMP,
+          dataURL
+        });
+      };
+
+      document.getElementById('upload-file-btn').addEventListener('click', async () => {
+        const files = Array.from(fileInputEl.files || []);
+        if (!files.length) {
+          uploadStatusEl.textContent = 'Select one or more files first.';
+          return;
+        }
+
+        uploadStatusEl.textContent = `Uploading ${files.length} file(s)...`;
+
+        try {
+          await Promise.all(files.map((file) => uploadSingleFile(file)));
+          uploadStatusEl.textContent = 'Upload complete.';
+          fileInputEl.value = '';
+        } catch (error) {
+          uploadStatusEl.textContent = 'Upload failed. Check Realtime Database rules.';
+          console.error(error);
+        }
+      });
+
+      deleteAllFilesBtnEl.addEventListener('click', async () => {
+        const ok = window.confirm('Delete all files for this document? This cannot be undone.');
+        if (!ok) {
+          return;
+        }
+
+        try {
+          await filesRef.remove();
+          uploadStatusEl.textContent = 'All files deleted.';
+        } catch (error) {
+          uploadStatusEl.textContent = 'Failed to delete all files.';
+          console.error(error);
+        }
+      });
+
+      // Check if the document exists
+      docRef.once('value').then((snapshot) => {
+        if (!snapshot.exists()) {
+          // Create a new document if it doesn't exist
+          docRef.set({ content: '', files: {} });
+        }
+
+        // Sync changes from Firebase to Quill.js
+        docRef.on('value', (snapshot) => {
+          const data = snapshot.val();
+          if (data && data.content !== quill.root.innerHTML) {
+            quill.root.innerHTML = data.content;
+          }
+        });
+
+        filesRef.on('value', (filesSnapshot) => {
+          renderFilesTable(filesSnapshot.val());
+        });
+
+        // Sync changes from Quill.js to Firebase
+        quill.on('text-change', () => {
+          const content = quill.root.innerHTML;
+          docRef.update({ content });
+        });
+      });
+    }
   </script>
 </body>
 </html>
