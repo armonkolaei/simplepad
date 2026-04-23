@@ -6,6 +6,10 @@
   <title>Simple Pad</title>
   <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
       font-family: Arial, sans-serif;
       margin: 0;
@@ -21,16 +25,61 @@
       color: #333;
     }
 
+    .top-actions {
+      width: min(1200px, calc(100vw - 2rem));
+      margin: 14px auto 0;
+      padding-bottom: 10px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    #new-doc-btn {
+      border: 1px solid #333;
+      background: #fff;
+      color: #333;
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    #new-doc-btn:hover {
+      background: #333;
+      color: #fff;
+    }
+
     #editor-container {
-      height: 500px;
+      height: clamp(420px, 70vh, 820px);
+      width: min(1200px, calc(100vw - 2rem));
       margin: 20px auto;
-      max-width: 800px;
       border: 1px solid #ddd;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        padding: 14px;
+        font-size: 20px;
+      }
+
+      .top-actions {
+        width: calc(100vw - 1rem);
+        margin-top: 10px;
+        padding-bottom: 8px;
+      }
+
+      #editor-container {
+        width: calc(100vw - 1rem);
+        margin: 12px auto;
+      }
     }
   </style>
 </head>
 <body>
   <h1 id="page-title">Simple Pad</h1>
+  <div class="top-actions">
+    <button id="new-doc-btn" type="button">Create New Doc</button>
+  </div>
   <div id="editor-container"></div>
 
   <!-- Firebase compatibility scripts -->
@@ -56,6 +105,15 @@
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
+    // Create a unique document ID for a new shared doc
+    const createDocumentId = () => {
+      if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+        return window.crypto.randomUUID();
+      }
+
+      return `doc-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    };
+
     // Get the unique document ID from the URL
     const getDocumentIdFromURL = () => {
       const urlParams = new URLSearchParams(window.location.search);
@@ -63,6 +121,13 @@
     };
 
     const documentId = getDocumentIdFromURL();
+
+    document.getElementById('new-doc-btn').addEventListener('click', () => {
+      const newDocumentId = createDocumentId();
+      const nextURL = new URL(window.location.href);
+      nextURL.searchParams.set('doc', newDocumentId);
+      window.location.href = nextURL.toString();
+    });
 
     // Update the page title dynamically
     document.getElementById('page-title').textContent = `Simple Pad:# ${documentId}`;
