@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Simple Pad</title>
-  <link href="https://cdn.quilljs.com/1.3.7/quill.snow.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/jodit@4.2.47/es2021/jodit.min.css">
   <style>
     * {
       box-sizing: border-box;
@@ -67,10 +67,24 @@
     }
 
     #editor-container {
-      height: clamp(420px, 70vh, 820px);
+      height: clamp(560px, 82vh, 980px);
       width: min(1200px, calc(100vw - 2rem));
-      margin: 20px auto;
+      margin: 20px auto 18px;
+      padding: 16px;
       border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+
+    #editor-container .jodit-container {
+      height: 100% !important;
+      /* margin: 0 16px; */
+      border-radius: 6px;
+      overflow: hidden;
+    }
+
+    #editor-container .jodit-wysiwyg {
+      min-height: 420px;
     }
 
     .welcome-screen {
@@ -90,11 +104,15 @@
 
     .uploads-section {
       width: min(1200px, calc(100vw - 2rem));
-      margin: 0 auto 24px;
+      margin: 12px auto 24px;
       padding: 16px;
       border: 1px solid #ddd;
       border-radius: 8px;
       background: #fafafa;
+    }
+
+    .uploads-section h2 {
+      margin: 6px 0 12px;
     }
 
     .uploads-controls {
@@ -199,10 +217,16 @@
       }
 
       #editor-container {
+        height: clamp(300px, 46vh, 420px);
         width: calc(100vw - 1rem);
         margin: 12px auto;
+        padding: 12px;
       }
 
+      #editor-container .jodit-wysiwyg {
+        min-height: 180px;
+      }
+      
       .uploads-section {
         width: calc(100vw - 1rem);
         padding: 12px;
@@ -264,8 +288,8 @@
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-database-compat.js"></script>
 
-  <!-- Quill.js scripts -->
-  <script src="https://cdn.quilljs.com/1.3.7/quill.min.js"></script>
+  <!-- Jodit editor scripts (MIT license) -->
+  <script src="https://cdn.jsdelivr.net/npm/jodit@4.2.47/es2021/jodit.min.js"></script>
 
   <script>
     // Firebase configuration (replace these with your Firebase project credentials)
@@ -328,17 +352,23 @@
       pageTitleEl.textContent = `Simple Pad:# ${documentId}`;
       welcomeScreenEl.style.display = 'none';
 
-      // Initialize Quill.js
-      const quill = new Quill('#editor-container', {
-        theme: 'snow',
-        modules: {
-          toolbar: [
-            ['bold', 'italic', 'underline'], // Text styles
-            [{ 'header': [1, 2, 3, false] }], // Headers
-            [{ 'list': 'ordered' }, { 'list': 'bullet' }], // Lists
-            ['link', 'image'], // Links and images
-            ['clean'] // Clear formatting
-          ]
+      // Initialize Jodit with table-friendly paste behavior.
+      const editor = Jodit.make('#editor-container', {
+        height: '100%',
+        toolbarAdaptive: false,
+        toolbarSticky: false,
+        askBeforePasteHTML: false,
+        defaultActionOnPaste: 'insert_as_html',
+        buttons: [
+          'bold', 'italic', 'underline', '|',
+          'ul', 'ol', '|',
+          'font', 'fontsize', 'paragraph', '|',
+          'table', 'link', 'image', '|',
+          'undo', 'redo', '|',
+          'eraser', 'fullsize'
+        ],
+        uploader: {
+          insertImageAsBase64URI: true
         }
       });
 
@@ -515,11 +545,12 @@
           docRef.set({ content: '', files: {} });
         }
 
-        // Sync changes from Firebase to Quill.js
+        // Sync changes from Firebase to editor
         docRef.on('value', (snapshot) => {
           const data = snapshot.val();
-          if (data && data.content !== quill.root.innerHTML) {
-            quill.root.innerHTML = data.content;
+          const nextContent = (data && typeof data.content === 'string') ? data.content : '';
+          if (nextContent !== editor.value) {
+            editor.value = nextContent;
           }
         });
 
@@ -527,9 +558,9 @@
           renderFilesTable(filesSnapshot.val());
         });
 
-        // Sync changes from Quill.js to Firebase
-        quill.on('text-change', () => {
-          const content = quill.root.innerHTML;
+        // Sync changes from editor to Firebase
+        editor.events.on('change', () => {
+          const content = editor.value;
           docRef.update({ content });
         });
       });
