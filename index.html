@@ -67,7 +67,7 @@
     }
 
     #editor-container {
-      height: clamp(560px, 82vh, 980px);
+      height: clamp(600px, 70vh, 1200px);
       width: min(1200px, calc(100vw - 2rem));
       margin: 20px auto 18px;
       padding: 16px;
@@ -84,7 +84,8 @@
     }
 
     #editor-container .jodit-wysiwyg {
-      min-height: 420px;
+      min-height: 800px !important;
+      height: auto !important;
     }
 
     .welcome-screen {
@@ -217,14 +218,15 @@
       }
 
       #editor-container {
-        height: clamp(300px, 46vh, 420px);
+        height: clamp(450px, 65vh, 800px);
         width: calc(100vw - 1rem);
         margin: 12px auto;
         padding: 12px;
       }
 
       #editor-container .jodit-wysiwyg {
-        min-height: 180px;
+        min-height: 400px !important;
+        height: auto !important;
       }
       
       .uploads-section {
@@ -354,7 +356,7 @@
 
       // Initialize Jodit with table-friendly paste behavior.
       const editor = Jodit.make('#editor-container', {
-        height: '100%',
+        minHeight: 400,
         toolbarAdaptive: false,
         toolbarSticky: false,
         askBeforePasteHTML: false,
